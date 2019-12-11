@@ -1,5 +1,9 @@
 package com.example.piedrapapeltijera;
 
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -7,6 +11,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
@@ -16,6 +21,9 @@ public class MainActivity extends AppCompatActivity {
     ImageView ImgJugador, ImgCPU;
     int JugadorPuntaje = 0;
     int CPUPuntaje = 0;
+    SensorManager sensorManager;
+    Sensor sensor ;
+    SensorEventListener sensorEventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,38 +38,73 @@ public class MainActivity extends AppCompatActivity {
         ImgJugador = (ImageView) findViewById(R.id.ImgJugador);
         ImgCPU = (ImageView) findViewById(R.id.ImgCPU);
 
-        btnPiedra.setOnClickListener(new View.OnClickListener() {
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        if (sensor == null)
+            finish();
+        sensorEventListener = new SensorEventListener() {
             @Override
-            public void onClick(View view) {
-                ImgJugador.setImageResource(R.drawable.piedra);
-                String mensaje = turno("Piedra");
-                Toast.makeText(MainActivity.this, mensaje, Toast.LENGTH_SHORT).show();
-                txtMarcador.setText("Jugador: " + Integer.toString(JugadorPuntaje) + "CPU: " + Integer.toString(CPUPuntaje));
-
+            public void onSensorChanged(SensorEvent event) {
+                float x = event.values[0];
+                float y = event.values[1];
+                Toast.makeText(MainActivity.this, "El valor del gyro "+x+", "+y, Toast.LENGTH_SHORT).show();
+                if(y < 8){
+                    ImgJugador.setImageResource(R.drawable.papel);
+                    String mensaje = turno("Papel");
+                    Toast.makeText(MainActivity.this, mensaje, Toast.LENGTH_SHORT).show();
+                    txtMarcador.setText("Jugador: " + Integer.toString(JugadorPuntaje) + "CPU: " + Integer.toString(CPUPuntaje));
+                }else if (x < -5) {
+                    ImgJugador.setImageResource(R.drawable.tijera);
+                    String mensaje = turno("Tijera");
+                    Toast.makeText(MainActivity.this, mensaje, Toast.LENGTH_SHORT).show();
+                    txtMarcador.setText("Jugador: " + Integer.toString(JugadorPuntaje) + "CPU: " + Integer.toString(CPUPuntaje));
+                } else if (x > 5) {
+                    ImgJugador.setImageResource(R.drawable.piedra);
+                    String mensaje = turno("Piedra");
+                    Toast.makeText(MainActivity.this, mensaje, Toast.LENGTH_SHORT).show();
+                    txtMarcador.setText("Jugador: " + Integer.toString(JugadorPuntaje) + "CPU: " + Integer.toString(CPUPuntaje));
+                }
             }
-        });
 
-        btnPapel.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                ImgJugador.setImageResource(R.drawable.papel);
-                String mensaje = turno("Papel");
-                Toast.makeText(MainActivity.this, mensaje, Toast.LENGTH_SHORT).show();
-                txtMarcador.setText("Jugador: " + Integer.toString(JugadorPuntaje) + "CPU: " + Integer.toString(CPUPuntaje));
-
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
             }
-        });
+        };
+        start();
 
-        btnTijera.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                ImgJugador.setImageResource(R.drawable.tijera);
-                String mensaje = turno("Tijera");
-                Toast.makeText(MainActivity.this, mensaje, Toast.LENGTH_SHORT).show();
-                txtMarcador.setText("Jugador: " + Integer.toString(JugadorPuntaje) + "CPU: " + Integer.toString(CPUPuntaje));
+      btnPiedra.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+              ImgJugador.setImageResource(R.drawable.piedra);
+              String mensaje = turno("Piedra");
+              Toast.makeText(MainActivity.this, mensaje, Toast.LENGTH_SHORT).show();
+              txtMarcador.setText("Jugador: " + Integer.toString(JugadorPuntaje) + "CPU: " + Integer.toString(CPUPuntaje));
 
-            }
-        });
+          }
+      });
+
+      btnPapel.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+              ImgJugador.setImageResource(R.drawable.papel);
+              String mensaje = turno("Papel");
+              Toast.makeText(MainActivity.this, mensaje, Toast.LENGTH_SHORT).show();
+              txtMarcador.setText("Jugador: " + Integer.toString(JugadorPuntaje) + "CPU: " + Integer.toString(CPUPuntaje));
+
+          }
+      });
+
+      btnTijera.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+              ImgJugador.setImageResource(R.drawable.tijera);
+              String mensaje = turno("Tijera");
+              Toast.makeText(MainActivity.this, mensaje, Toast.LENGTH_SHORT).show();
+              txtMarcador.setText("Jugador: " + Integer.toString(JugadorPuntaje) + "CPU: " + Integer.toString(CPUPuntaje));
+
+          }
+      });
     }
 
         public String turno(String elegido){
@@ -116,4 +159,24 @@ public class MainActivity extends AppCompatActivity {
 
             else return "no seguro";
         }
+
+    private void start(){
+        sensorManager.registerListener(sensorEventListener,sensor,SensorManager.SENSOR_DELAY_NORMAL);
     }
+
+    private void stop (){
+        sensorManager.unregisterListener(sensorEventListener);
+    }
+
+    @Override
+    protected void onPause() {
+        stop();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        start();
+        super.onResume();
+    }
+}
